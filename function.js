@@ -8,9 +8,7 @@ exports.mutator = function mutator (req, res) {
   // something fishy is going on here
   if (admissionRequest.request.object == null) {
     console.log("got nothing");
-    res.setHeader('Content-Type', 'application/json');
-    res.send(JSON.stringify("{}"));
-    res.status(200).end();
+    res.status(200).send({});
   }
 
   var objectOriginal = admissionRequest.request.object;
@@ -27,24 +25,18 @@ exports.mutator = function mutator (req, res) {
   };
 
   switch (admissionRequest.request.kind.kind) {
-    case "StatefulSet":
-    case "DaemonSet":
-    case "Deployment": {
-        objectClone.spec.template.spec.containers.forEach(container => {
-          if (container.resources != null) {
-            delete container.resources;
-          }
-        });
-        break;
-    }
-    default: {
-        // somehow we got the wrong kind here
-        console.log(`Unsupported object Kind: ${admissionRequest.request.kind.kind}. Defaulting to approve without mutation`)
-        res.setHeader('Content-Type', 'application/json');
-        res.send(JSON.stringify(admissionReview));
-        res.status(200).end();
-        return;
-    }
+    case "StatefulSet": case "DaemonSet": case "Deployment":
+      objectClone.spec.template.spec.containers.forEach(container => {
+        if (container.resources != null) {
+          delete container.resources;
+        }
+      });
+      break;
+    default:
+      // somehow we got the wrong kind here
+      console.log(`Unsupported object Kind: ${admissionRequest.request.kind.kind}. Defaulting to approve without mutation`)
+      res.status(200).send(admissionReview);
+      return;
   }
 
   var patch = jsonPatch.compare(objectOriginal, objectClone)
@@ -55,8 +47,5 @@ exports.mutator = function mutator (req, res) {
       admissionReviewResponse.patchType = "JSONPatch";
       admissionReviewResponse.patch = patchBase64;
   }
-
-  res.setHeader('Content-Type', 'application/json');
-  res.send(JSON.stringify(admissionReview));
-  res.status(200).end();
+  res.status(200).send(admissionReview);
 };
