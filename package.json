@@ -4,7 +4,7 @@
   "description": "",
   "main": "function.js",
   "dependencies": {
-    "fast-json-patch": "^3.1.0"
+    "fast-json-patch": "^3.1.1"
   },
   "devDependencies": {},
   "author": "",
